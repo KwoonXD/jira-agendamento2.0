@@ -101,6 +101,12 @@ def truncate_time_to_5min(dt):
     # Arredonda o minuto para baixo para o múltiplo de 5 mais próximo
     return dt.replace(minute=(dt.minute // 5) * 5, second=0, microsecond=0)
 
+
+@st.cache_data(ttl=600, show_spinner="Buscando transições...")
+def fetch_jira_transitions(issue_key: str):
+    """Cacheia as transições disponíveis para um chamado."""
+    return jira.get_transitions(issue_key)
+
 # ==== Campos a buscar ====
 FIELDS = (
     "summary,customfield_14954,customfield_14829,customfield_14825,"
@@ -373,7 +379,8 @@ with st.sidebar:
             )
             sel = st.multiselect("FSAs (pend.+agend.+tec-campo):", sorted(set(opts)))
             if sel:
-                trans_opts = {t["name"]: t["id"] for t in jira.get_transitions(sel[0])}
+                # Agora usa a função de cache
+                trans_opts = {t["name"]: t["id"] for t in fetch_jira_transitions(sel[0])}
                 choice = st.selectbox("Transição:", ["—"] + list(trans_opts))
                 extra = {}
                 if choice and "agend" in choice.lower():
@@ -514,10 +521,12 @@ with tab_details:
                     dup_keys = [d["key"] for d in detalhes
                                 if (d["pdv"], d["ativo"]) in verificar_duplicidade(detalhes)]
 
-                    # Mantido: checagem spare por loja
-                    spare_raw, _ = jira.buscar_chamados_enhanced(
-                        f'project = FSA AND status = "Aguardando Spare" AND "Codigo da Loja[Dropdown]" = "{loja}"',
-                        FIELDS, page_size=100
+                    # Mantido: checagem spare por loja (AGORA COM CACHE)
+                    jql_spare = f'project = FSA AND status = "Aguardando Spare" AND "Codigo da Loja[Dropdown]" = "{loja}"'
+                    spare_raw, _ = fetch_jira_data(
+                        jql_spare,
+                        FIELDS,
+                        page_size=100
                     )
                     spare_keys = [i["key"] for i in (spare_raw or [])]
 
