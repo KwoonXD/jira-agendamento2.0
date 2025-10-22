@@ -1,6 +1,6 @@
 """Shared constants for the Field Service Streamlit dashboard."""
 
-from typing import Final
+from typing import Final, Mapping
 
 # ---- Custom field identifiers ----
 CUSTOMFIELD_LOJA: Final[str] = "customfield_14954"
@@ -29,15 +29,21 @@ STATUS_NAME_AGENDAMENTO: Final[str] = "AGENDAMENTO"
 STATUS_NAME_AGENDADO: Final[str] = "Agendado"
 STATUS_NAME_TEC_CAMPO: Final[str] = "TEC-CAMPO"
 
-STATUS_ID_AGENDAMENTO: Final[int] = 11499
-STATUS_ID_AGENDADO: Final[int] = 11481
-STATUS_ID_TEC_CAMPO: Final[int] = 11500
+STATUS_ID_AGENDAMENTO: Final[str] = "11499"
+STATUS_ID_AGENDADO: Final[str] = "11481"
+STATUS_ID_TEC_CAMPO: Final[str] = "11500"
 
 STATUS_NAMES_MONITORED: Final[tuple[str, ...]] = (
     STATUS_NAME_AGENDAMENTO,
     STATUS_NAME_AGENDADO,
     STATUS_NAME_TEC_CAMPO,
 )
+
+STATUS_ID_TO_NAME: Final[Mapping[str, str]] = {
+    STATUS_ID_AGENDAMENTO: STATUS_NAME_AGENDAMENTO,
+    STATUS_ID_AGENDADO: STATUS_NAME_AGENDADO,
+    STATUS_ID_TEC_CAMPO: STATUS_NAME_TEC_CAMPO,
+}
 
 # ---- JQL snippets ----
 JQL_PEND: Final[str] = (

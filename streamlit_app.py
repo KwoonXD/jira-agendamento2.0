@@ -64,6 +64,7 @@ from constants import (
     STATUS_NAME_AGENDAMENTO,
     STATUS_NAME_TEC_CAMPO,
     STATUS_NAMES_MONITORED,
+    STATUS_ID_TO_NAME,
 )
 from utils.jira_api import JiraAPI
 from utils.messages import gerar_mensagem, verificar_duplicidade
@@ -260,11 +261,18 @@ def render_dashboard(authenticator: stauth.Authenticate):
     tec_raw = []
     for issue in combo_raw or []:
         status_name = ((issue.get("fields") or {}).get("status") or {}).get("name")
-        if status_name == STATUS_NAME_AGENDAMENTO:
+        status_id = ((issue.get("fields") or {}).get("status") or {}).get("id")
+        resolved_status = None
+        if status_id is not None:
+            resolved_status = STATUS_ID_TO_NAME.get(str(status_id))
+        if not resolved_status and status_name in STATUS_NAMES_MONITORED:
+            resolved_status = status_name
+
+        if resolved_status == STATUS_NAME_AGENDAMENTO:
             pendentes_raw.append(issue)
-        elif status_name == STATUS_NAME_AGENDADO:
+        elif resolved_status == STATUS_NAME_AGENDADO:
             agendados_raw.append(issue)
-        elif status_name == STATUS_NAME_TEC_CAMPO:
+        elif resolved_status == STATUS_NAME_TEC_CAMPO:
             tec_raw.append(issue)
 
     dbg_pend = {"source": "combo", "status": STATUS_NAME_AGENDAMENTO, "count": len(pendentes_raw)}
@@ -306,10 +314,16 @@ def render_dashboard(authenticator: stauth.Authenticate):
 
     kpi = {status: 0 for status in STATUS_NAMES_MONITORED}
     for issue in combo_raw or []:
-        fields = issue.get("fields") or {}
-        status_name = (fields.get("status") or {}).get("name")
-        if status_name in kpi:
-            kpi[status_name] += 1
+        status = (issue.get("fields") or {}).get("status") or {}
+        status_id = status.get("id")
+        status_name = status.get("name")
+        resolved_status = None
+        if status_id is not None:
+            resolved_status = STATUS_ID_TO_NAME.get(str(status_id))
+        if not resolved_status and status_name in STATUS_NAMES_MONITORED:
+            resolved_status = status_name
+        if resolved_status in kpi:
+            kpi[resolved_status] += 1
 
     contagem_por_loja = {}
     for issue in combo_raw or []:
