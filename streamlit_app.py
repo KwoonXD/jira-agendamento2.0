@@ -973,7 +973,10 @@ def main():
                 st.session_state["name"] = name
 
         if auth_status:
-            st.experimental_rerun()
+            if hasattr(st, "rerun"):
+                st.rerun()
+            else:
+                st.experimental_rerun()
         elif auth_status is False:
             st.error("Usuário ou senha incorretos.")
         else:
