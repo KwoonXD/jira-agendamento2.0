@@ -13,6 +13,8 @@
 import io
 import csv
 import time
+import importlib
+import importlib.util
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict
@@ -20,8 +22,16 @@ from collections import defaultdict
 import pandas as pd
 import requests
 import streamlit as st
-import streamlit_authenticator as stauth
 import yaml
+
+if importlib.util.find_spec("streamlit_authenticator") is None:
+    st.error(
+        "⚠️ Dependência 'streamlit-authenticator' não encontrada. "
+        "Execute `pip install -r requirements.txt` antes de iniciar o app."
+    )
+    st.stop()
+
+stauth = importlib.import_module("streamlit_authenticator")
 
 from constants import (
     CUSTOMFIELD_CEP,
