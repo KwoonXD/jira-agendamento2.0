@@ -215,6 +215,36 @@ def render_dashboard(authenticator: stauth.Authenticate):
         initial_sidebar_state="expanded",
     )
 
+    # --- INJETAR CSS CUSTOMIZADO ---
+    st.markdown(
+        """
+<style>
+/* Muda a cor do título dos expanders para seu primaryColor */
+.st-emotion-cache-1fvo6s3 {
+    color: #6A994E;
+}
+
+/* Muda a cor dos labels dos st.metric */
+.st-emotion-cache-10y5d6q {
+    color: #F2F3EE;
+    font-size: 1.1rem;
+}
+
+/* Muda a cor dos valores dos st.metric */
+.st-emotion-cache-1tpl0xr {
+    color: #F2F3EE;
+}
+
+/* Força a cor do texto dentro das abas (Tabs) */
+.st-emotion-cache-1qg0eup p {
+    color: #F2F3EE;
+}
+</style>
+        """,
+        unsafe_allow_html=True,
+    )
+    # --- FIM DO CSS ---
+
     if "auto_refresh_on" not in st.session_state:
         st.session_state.auto_refresh_on = True
 

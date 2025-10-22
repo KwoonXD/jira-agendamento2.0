@@ -1,9 +1,9 @@
 [theme]
 base="dark"
-primaryColor="#22D3EE"        # ciano (ação)
-backgroundColor="#0B1220"     # fundo dark azulado
-secondaryBackgroundColor="#111827"  # cartões
-textColor="#E5E7EB"           # texto cinza claro
+primaryColor="#6A994E"
+backgroundColor="#191D18"
+secondaryBackgroundColor="#242B23"
+textColor="#F2F3EE"
 font="sans serif"
 
 [client]
