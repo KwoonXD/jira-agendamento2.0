@@ -77,7 +77,7 @@ def _load_authenticator() -> stauth.Authenticate:
     preauthorized_cfg = raw_config.get("preauthorized", {})
 
     return stauth.Authenticate(
-        usernames,
+        {"usernames": usernames},
         cookie_cfg.get("name", "painel-field-service"),
         cookie_cfg.get("key", "painel-field-service"),
         cookie_cfg.get("expiry_days", 1),
