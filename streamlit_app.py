@@ -33,6 +33,21 @@ if importlib.util.find_spec("streamlit_authenticator") is None:
 
 stauth = importlib.import_module("streamlit_authenticator")
 
+DEPRECATION_ERRORS = ()
+_stauth_utilities = getattr(stauth, "utilities", None)
+if _stauth_utilities is not None:
+    _stauth_exceptions = getattr(_stauth_utilities, "exceptions", None)
+    if _stauth_exceptions is not None:
+        _DeprecationError = getattr(_stauth_exceptions, "DeprecationError", None)
+        if isinstance(_DeprecationError, type):
+            DEPRECATION_ERRORS = (_DeprecationError,)
+
+LOGIN_FIELDS = {
+    "Form name": "Login",
+    "Username": "Usuário",
+    "Password": "Senha",
+}
+
 from constants import (
     CUSTOMFIELD_CEP,
     CUSTOMFIELD_CIDADE,
@@ -939,9 +954,10 @@ def main():
         render_dashboard(authenticator)
     else:
         st.session_state.pop("jira_client", None)
+        fallback_exceptions = DEPRECATION_ERRORS + (TypeError,)
         try:
-            login_result = authenticator.login(location="main")
-        except TypeError:
+            login_result = authenticator.login(fields=LOGIN_FIELDS, location="main")
+        except fallback_exceptions:
             login_result = authenticator.login("Login", "main")
 
         auth_status = st.session_state.get("authentication_status")
