@@ -6,6 +6,20 @@ from requests.auth import HTTPBasicAuth
 from collections import defaultdict
 from typing import Tuple, Dict, Any, Optional, List
 
+from constants import (
+    CUSTOMFIELD_ATIVO,
+    CUSTOMFIELD_CEP,
+    CUSTOMFIELD_CIDADE,
+    CUSTOMFIELD_DATA_AGENDA,
+    CUSTOMFIELD_ENDERECO,
+    CUSTOMFIELD_LOJA,
+    CUSTOMFIELD_PDV,
+    CUSTOMFIELD_PROBLEMA,
+    CUSTOMFIELD_TECNICOS,
+    CUSTOMFIELD_UF,
+    FIELDS,
+)
+
 
 class JiraAPI:
     """
@@ -183,17 +197,17 @@ class JiraAPI:
         agrup = defaultdict(list)
         for issue in issues:
             f = issue.get("fields", {})
-            loja = f.get("customfield_14954", {}).get("value", "Loja Desconhecida")
+            loja = f.get(CUSTOMFIELD_LOJA, {}).get("value", "Loja Desconhecida")
             agrup[loja].append({
                 "key": issue.get("key"),
-                "pdv": f.get("customfield_14829", "--"),
-                "ativo": f.get("customfield_14825", {}).get("value", "--"),
-                "problema": f.get("customfield_12374", "--"),
-                "endereco": f.get("customfield_12271", "--"),
-                "estado": (f.get("customfield_11948") or {}).get("value", "--"),
-                "cep": f.get("customfield_11993", "--"),
-                "cidade": f.get("customfield_11994", "--"),
-                "data_agendada": f.get("customfield_12036"),
+                "pdv": f.get(CUSTOMFIELD_PDV, "--"),
+                "ativo": f.get(CUSTOMFIELD_ATIVO, {}).get("value", "--"),
+                "problema": f.get(CUSTOMFIELD_PROBLEMA, "--"),
+                "endereco": f.get(CUSTOMFIELD_ENDERECO, "--"),
+                "estado": (f.get(CUSTOMFIELD_UF) or {}).get("value", "--"),
+                "cep": f.get(CUSTOMFIELD_CEP, "--"),
+                "cidade": f.get(CUSTOMFIELD_CIDADE, "--"),
+                "data_agendada": f.get(CUSTOMFIELD_DATA_AGENDA),
             })
         return agrup
 
@@ -209,7 +223,7 @@ class JiraAPI:
 
     def get_issue(self, issue_key: str) -> dict:
         url = f"{self._base()}/issue/{issue_key}"
-        params = {"fields": "status"}
+        params = {"fields": FIELDS}
         try:
             r = self._req("GET", url, params=params, json_content=False)
             if r.status_code == 200:
