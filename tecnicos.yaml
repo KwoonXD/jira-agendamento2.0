@@ -1,0 +1,7 @@
+tecnicos:
+  - nome: "Preencher Nome"
+    cpf: "000.000.000-00"
+    rg: "0.000.000"
+    telefone: "(00) 00000-0000"
+    regioes:
+      - "UF"
