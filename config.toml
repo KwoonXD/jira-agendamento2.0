@@ -1,0 +1,19 @@
+[theme]
+base="dark"
+primaryColor="#22D3EE"        # ciano (ação)
+backgroundColor="#0B1220"     # fundo dark azulado
+secondaryBackgroundColor="#111827"  # cartões
+textColor="#E5E7EB"           # texto cinza claro
+font="sans serif"
+
+[client]
+toolbarMode = "auto"
+
+[server]
+headless = true
+enableXsrfProtection = true
+enableCORS = false
+maxUploadSize = 200
+
+[browser]
+gatherUsageStats = false
