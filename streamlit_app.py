@@ -86,6 +86,27 @@ if not who:
     )
     st.stop()
 
+# ==== Funções de Cache para API ====
+
+@st.cache_data(ttl=300, show_spinner="Buscando dados do Jira...")
+def fetch_jira_data(jql: str, fields: str, page_size: int):
+    """Função 'wrapper' para cachear a busca de chamados."""
+    return jira.buscar_chamados_enhanced(jql, fields, page_size=page_size)
+
+
+def truncate_time_to_5min(dt):
+    """Trunca o tempo para o bucket de 5 min mais próximo, para estabilizar o cache."""
+    if not dt:
+        dt = datetime.now(timezone.utc)
+    # Arredonda o minuto para baixo para o múltiplo de 5 mais próximo
+    return dt.replace(minute=(dt.minute // 5) * 5, second=0, microsecond=0)
+
+
+@st.cache_data(ttl=600, show_spinner="Buscando transições...")
+def fetch_jira_transitions(issue_key: str):
+    """Cacheia as transições disponíveis para um chamado."""
+    return jira.get_transitions(issue_key)
+
 # ==== Campos a buscar ====
 FIELDS = (
     "summary,customfield_14954,customfield_14829,customfield_14825,"
@@ -157,21 +178,29 @@ def is_loja_critica(loja_data):
         stale = (datetime.now(timezone.utc) - last_upd) > timedelta(days=7)
     return (qtd >= 5) or stale
 
-# ==== Buscas (mantidas com seu Enhanced) ====
-pendentes_raw, dbg_pend = jira.buscar_chamados_enhanced(JQL_PEND, FIELDS, page_size=200)
-agendados_raw, dbg_ag   = jira.buscar_chamados_enhanced(JQL_AG,   FIELDS, page_size=200)
-tec_raw,      dbg_tc    = jira.buscar_chamados_enhanced(JQL_TC,   FIELDS, page_size=300)
-combo_raw,    dbg_combo = jira.buscar_chamados_enhanced(JQL_COMBINADA, FIELDS, page_size=600)
+# ==== Buscas (AGORA COM CACHE) ====
+# As 4 chamadas abaixo usam JQLs estáticas e serão cacheadas por 5 min
+pendentes_raw, dbg_pend = fetch_jira_data(JQL_PEND, FIELDS, page_size=200)
+agendados_raw, dbg_ag   = fetch_jira_data(JQL_AG,   FIELDS, page_size=200)
+tec_raw,      dbg_tc    = fetch_jira_data(JQL_TC,   FIELDS, page_size=300)
+combo_raw,    dbg_combo = fetch_jira_data(JQL_COMBINADA, FIELDS, page_size=600)
 
-# Janela para tendência
+# Janela para tendência (com tempo truncado para o cache funcionar)
 days_window = int(st.session_state.filters["days"])
-to_dt = datetime.now(timezone.utc)
+
+# Usamos truncate_time_to_5min para que a string JQL seja estável por 5 min,
+# permitindo que o @st.cache_data funcione para esta query dinâmica.
+to_dt = truncate_time_to_5min(datetime.now(timezone.utc))
 from_dt = to_dt - timedelta(days=days_window)
+
 jql_res = JQL_RESOLVIDOS_BASE.format(
     from_iso=from_dt.strftime("%Y-%m-%d %H:%M"),
     to_iso=to_dt.strftime("%Y-%m-%d %H:%M")
 )
-resolvidos_raw, dbg_res = jira.buscar_chamados_enhanced(jql_res, FIELDS, page_size=600)
+
+# Esta chamada agora também será cacheada, pois 'jql_res' será o mesmo
+# para todas as execuções dentro da mesma janela de 5 minutos.
+resolvidos_raw, dbg_res = fetch_jira_data(jql_res, FIELDS, page_size=600)
 
 # ==== Agrupamentos ====
 agrup_pend = jira.agrupar_chamados(pendentes_raw)
@@ -350,7 +379,8 @@ with st.sidebar:
             )
             sel = st.multiselect("FSAs (pend.+agend.+tec-campo):", sorted(set(opts)))
             if sel:
-                trans_opts = {t["name"]: t["id"] for t in jira.get_transitions(sel[0])}
+                # Agora usa a função de cache
+                trans_opts = {t["name"]: t["id"] for t in fetch_jira_transitions(sel[0])}
                 choice = st.selectbox("Transição:", ["—"] + list(trans_opts))
                 extra = {}
                 if choice and "agend" in choice.lower():
@@ -491,10 +521,12 @@ with tab_details:
                     dup_keys = [d["key"] for d in detalhes
                                 if (d["pdv"], d["ativo"]) in verificar_duplicidade(detalhes)]
 
-                    # Mantido: checagem spare por loja
-                    spare_raw, _ = jira.buscar_chamados_enhanced(
-                        f'project = FSA AND status = "Aguardando Spare" AND "Codigo da Loja[Dropdown]" = "{loja}"',
-                        FIELDS, page_size=100
+                    # Mantido: checagem spare por loja (AGORA COM CACHE)
+                    jql_spare = f'project = FSA AND status = "Aguardando Spare" AND "Codigo da Loja[Dropdown]" = "{loja}"'
+                    spare_raw, _ = fetch_jira_data(
+                        jql_spare,
+                        FIELDS,
+                        page_size=100
                     )
                     spare_keys = [i["key"] for i in (spare_raw or [])]
 
