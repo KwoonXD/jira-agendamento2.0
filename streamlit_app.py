@@ -939,8 +939,23 @@ def main():
         render_dashboard(authenticator)
     else:
         st.session_state.pop("jira_client", None)
-        authenticator.login("Login", "main")
+        try:
+            login_result = authenticator.login(location="main")
+        except TypeError:
+            login_result = authenticator.login("Login", "main")
+
         auth_status = st.session_state.get("authentication_status")
+
+        if isinstance(login_result, tuple) and len(login_result) == 3:
+            name, returned_status, username = login_result
+            if returned_status is not None:
+                auth_status = returned_status
+                st.session_state["authentication_status"] = returned_status
+            if username is not None:
+                st.session_state["username"] = username
+            if name is not None:
+                st.session_state["name"] = name
+
         if auth_status:
             st.experimental_rerun()
         elif auth_status is False:
